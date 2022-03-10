@@ -1,18 +1,20 @@
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
+// import VConsole from 'vconsole';
+// const vConsole = new VConsole();
 
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 
 import store from './store'
 import VueSocketIO from 'vue-socket.io'
-
+// Vue.use(vConsole)
 Vue.use(ElementUI);
 
 Vue.use(new VueSocketIO({
   debug: false,
-  connection: 'http://127.0.0.1:3000',
+  connection: 'http://172.18.26.74:3000',
   vuex: {
     store,
     actionPrefix: 'SOCKET_',

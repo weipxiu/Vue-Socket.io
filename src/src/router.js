@@ -13,10 +13,10 @@ export default new Router({
       name: 'home',
       component: Home
     },
-    {
-      path: '/skin',
-      name: 'skinPeeler',
-      component: () => import('./views/skinPeeler.vue')
-    }
+    // {
+    //   path: '/skin',
+    //   name: 'skinPeeler',
+    //   component: () => import('./views/skinPeeler.vue')
+    // }
   ]
 })

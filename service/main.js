@@ -1,9 +1,9 @@
 const Koa = require('koa');
-const app = new Koa();//实例化
+const app = new Koa();
 var _ = require('underscore');
-const Router = require('koa-router'); //注意：引入的方式
+const Router = require('koa-router');
 const bodyParser = require('koa-bodyparser');//处理post请求
-const cors = require('koa2-cors');// CORS是一个W3C标准，全称是"跨域资源共享"
+const cors = require('koa2-cors');// 跨域资源共享
 const { connect, initSchemas } = require("./mongodb");
 const mongoose = require('mongoose');
 
@@ -22,7 +22,7 @@ const port = 3000;
 
 //匹配所有路由
 app.use(async (ctx, next) => {
-    console.log('匹配所有路由',ctx.status)
+    console.log('匹配所有路由', ctx.status)
     await next();
     if (ctx.status == 404) {
         ctx.body = {
@@ -65,94 +65,85 @@ router.use('/details', details.routes());
 app.use(router.routes()); //启动路由
 app.use(router.allowedMethods()); //可根据ctx.status设置response响应头
 
-// app.listen(3000, () => {
-//     console.log('监听3000端口')
-// });
-
-//获取用户ip地址
-// function getIPAddress(){
-//     var interfaces = require('os').networkInterfaces(); 
-//     for(var devName in interfaces){
-//       var iface = interfaces[devName];
-//       for(var i=0;i<iface.length;i++){
-//         var alias = iface[i];
-//         if(alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal){
-//           return alias.address;
-//         }
-//       }
-//     }
-//   }
-
 let user_count = 0;
+var userinfo = {}, user = [];
 io.on('connection', socket => {
-    console.log('初始化成功！');
+    socket.on('newUser', (username) => {
+        if (!(username in userinfo)) {
+            socket.username = username;
+            userinfo[username] = socket;
+            user.push(username);
+            // 新用户加入通知
+            socket.broadcast.emit('newNserJoin', username);
+            console.log('user', user);
+        }
+        socket.emit('login', user);
+    })
+
     const Message = mongoose.model('Message')
     Message.find({}, function (err, res) {
         socket.emit('getMsg', res);
+        // io.sockets.emit('socketId', socket.id);
     })
-
     //统计连接数
-    socket.on('users',data=>{
-        user_count++;
-        io.emit('users',user_count);
-    })
-    //disconnnect断开,自带函数方法
-    socket.on('disconnect',data=>{
-        console.log('用户断开了');
-        if(user_count > 0)user_count--;
-        io.emit('users',user_count);
+    // socket.on('users', data => {
+    //     user_count++;
+    //     io.emit('users', user_count);
+    // })
+    // 断开,自带函数方法
+    socket.on('disconnect', data => {
+        console.log(socket.username + '断开了');
+        //移除
+        if (socket.username in userinfo) {
+            delete (userinfo[socket.username]);
+            user.splice(user.indexOf(socket.username), 1);
+            console.log(user);
+            socket.broadcast.emit('leave', socket.username)
+        }
     })
     // 私聊
     socket.on('send_private', data => {
-		// if(data.name in usocket) {
-        //     console.log('data',data);
-		// 	usocket[data.name].emit('private', data);
-		// }
-	    // socket.to(socket.id).emit('private', data);
         let toId = socket.id;//获取发送方的id;
-        console.log('toId',socket.id);
-        var toSocket;
+        let toSocket;
+        // data.id = socket.id;
+        data.type = 1;
         try {
             //查找指定socket，使用underscore.js，
             toSocket = _.findWhere(io.sockets.sockets, {
-                id: toId
+                id: userinfo[data.nameId].id
             });
-            // toSocket.emit("private", data);
-            socket.to(toId).emit('private', data);
+            toSocket.emit("private", data);
+            // socket.to(toId).emit('private', data);
         } catch (e) {
-            console.log(`找不到${toId}`);
+            console.log(`找不到目标ID：${userinfo[data.nameId].id}`);
         }
+        console.log('toId', data);
+        console.log('当前id', toId)
+        console.log('目标id', userinfo[data.nameId].id)
+        // if(data.nameId in userinfo) {
+        // 	usocket[data.userinfo].emit('private', res);
+        // }
     }),
-    // 群聊
-    socket.on('send', data => {
-        // console.log('客户端发送的内容：',data, data['name'], data['getMsg']);
-        const Message = mongoose.model('Message')
-        let oneUser = new Message({ name: data['name'], msg: data['getMsg'] })
-        try {
-            // console.log('私聊模式',data)
-            // usocket[data.name].emit('getMsg', res);
-            //socket.to(socket.id).emit('getMsg',data['getMsg']); // 局部广播
-            // Message.findOne({
-            //     name: '用户ql0yj'
-            // }).then((rs) => {
-            //     console.log('rs',rs)
-            //     socket.broadcast.to(rs._id).emit('getMsg',data['getMsg'])
-            // })
-            oneUser.save().then(() => {
-                const Message = mongoose.model('Message')
-                Message.find({}, function (err, res) {
-                    console.log('获取到数据', data)
-                    io.emit('getMsg', res); // 全局广播
+        // 群聊
+        socket.on('send', data => {
+            const Message = mongoose.model('Message')
+            let oneUser = new Message({ name: data['name'], msg: data['getMsg'] })
+            try {
+                oneUser.save().then(() => {
+                    const Message = mongoose.model('Message')
+                    Message.find({}, function (err, res) {
+                        console.log('获取到数据', data)
+                        io.emit('getMsg', res);
 
+                    })
                 })
-            })
-            
-        } catch (error) {
-            console.log("失败",error)
-        }
-    })
+
+            } catch (error) {
+                console.log("失败", error)
+            }
+        })
 })
 
 server.listen(port, () => {
-    console.log(`监听地址: http://127.0.0.1:${port}`);
+    console.log(`监听地址: http://172.18.26.74:${port}`);
 })

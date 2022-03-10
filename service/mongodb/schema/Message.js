@@ -9,7 +9,7 @@ const SALT_WORK_FACTOR = 10;
 //创建UseerSchema
 const MessageSchema = new Schema({
   megId: ObjectId,
-  name: String, 
+  name: String,
   msg: String
 })
 
