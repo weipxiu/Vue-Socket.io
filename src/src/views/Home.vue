@@ -39,7 +39,7 @@ export default {
   data: function() {
     return {
       input1: '',
-      type: 0,
+      type: 1,
       userList: {
         data: [],
         index: 0,
