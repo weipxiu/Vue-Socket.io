@@ -43,3 +43,7 @@ socket.io 提供了三种默认的事件（客户端和服务器都有）：`con
 `socket.emit()` ：向当前连接的该连接的客户端广播
 `socket.broadcast.emit()` ：向除去建立该连接的客户端外的所有客户端广播
 `io.sockets.emit()` ：向所有客户端广播
+
+https://www.w3cschool.cn/socket/
+https://github.com/MetinSeylan/Vue-Socket.io
+https://socket.io/docs/v2/client-api/#managertimeoutvalue

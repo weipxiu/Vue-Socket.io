@@ -69,7 +69,7 @@ let user_count = 0;
 var userinfo = {}, user = [];
 io.on('connection', socket => {
     socket.on('newUser', (username) => {
-        if (!(username in userinfo)) {
+        if (!(username in userinfo) && username) {
             socket.username = username;
             userinfo[username] = socket;
             user.push(username);
@@ -77,7 +77,7 @@ io.on('connection', socket => {
             socket.broadcast.emit('newNserJoin', username);
             console.log('user', user);
         }
-        socket.emit('login', user);
+        socket.emit('userList', user);
     })
 
     const Message = mongoose.model('Message')

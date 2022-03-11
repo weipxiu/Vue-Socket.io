@@ -43,7 +43,7 @@ export default {
       userList: {
         data: [],
         index: 0,
-        userNname: ''
+        userNname: sessionStorage.getItem('userName') || ''
       }
     };
   },
@@ -111,13 +111,13 @@ export default {
     border-radius: 4px;
   }
   span{
+    padding:5px;
     color:#fff;
     text-align: center;
     font-size:14px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    width: 50px;
     display: block;
   }
 }

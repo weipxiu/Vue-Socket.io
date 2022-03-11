@@ -56,6 +56,10 @@ export default {
       return this.userList.data[this.userList.index]
     }
   },
+  created() {
+    // 手动连接
+    this.$socket.open();
+  },
   mounted() {
     this.$socket.emit('connect', 1);
     this.dialogVisible = !this.userName;
@@ -64,9 +68,14 @@ export default {
     close(userName) {
       // 请求加入
       if (this.userName) {
-        sessionStorage.setItem('userName', this.userName)
-        this.$socket.emit('newUser', userName);
+        this.dialogVisible = false;
+        this.login(userName);
+        sessionStorage.setItem('userName', this.userName);
       }
+    },
+    // 登录
+    login(data) {
+      this.$socket.emit('newUser', data);
     },
     // 发送数据
     sbmit() {
@@ -96,32 +105,57 @@ export default {
     }
   },
   sockets: {
-    connect(data) {
-      if (data) {
+    connect() {
+      if (this.$socket.connected) {
         this.$socket.emit('newUser', this.userName);
-        console.log('连接成功', data)
+        console.log('初始化服务器连接成功')
+      } else {
+        console.log('初始化服务器连接失败')
       }
     },
+    // 失败
+    connect_error(data) {
+      this.$message.error('服务器连接过程中出错');
+      console.log('服务器连接过程中出错', data)
+    },
+    disconnect() {
+      this.$message({
+        message: 'socket已断开连接',
+        type: 'warning'
+      });
+      setTimeout(() => {
+        console.log('手动重新连接')
+        this.$socket.connect(); // 手动重新连接
+      }, 15000)
+    },
+    reconnect(data) {
+      this.$message({
+        message: '重新连接成功',
+        type: 'success'
+      });
+      console.log('重新连接成功', data)
+    },
+    // 重新连接时
+    reconnecting(data) {
+      console.log('尝试重新连接时触发', data)
+    },
     // 首次登陆接收其它成员信息
-    login(user) {
+    userList(user) {
       if (user.length >= 1) {
         this.userList.data = user;
         this.userList.userName = this.userName;
         this.$emit('input', this.userList);
-        console.log('用户列表信息', user)
+        console.log('用户列表', user)
       }
     },
     // 中途新用户加入
     newNserJoin(name, index) {
       this.userList.data.push(name)
       this.$emit('input', this.userList);
-      console.log(name + '新加入');
-    },
-    reconnect(data) {
-      console.log('重新连接', data)
-    },
-    disconnecting(data) {
-      console.log('socket已断开连接');
+      this.$message({
+        message: name + '新加入',
+        type: 'success'
+      });
     },
     // 销毁
     destroyed() {
